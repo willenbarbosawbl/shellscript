@@ -8,7 +8,7 @@ caminho_pwd=$PWD
 home=$(echo ${caminho_pwd} | tr "/" " " | awk '{print $1}')
 user=$(echo ${caminho_pwd} | tr "/" " " | awk '{print $2}')
 
-if [-n "$pacote"]
+if [ -n "$pacote" ]
 then
     echo "O programa ($programa) já está instalado!"
     exit
