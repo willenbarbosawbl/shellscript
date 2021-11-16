@@ -15,14 +15,22 @@ then
     sudo mysql --version
     exit
 else
+    echo "Baixando o repositório."
+    sudo wget -c https://dev.mysql.com/get/mysql-apt-config_0.8.20-1_all.deb
+    echo "Instalando o reposiótio."
+    sudo dpkg -i mysql-apt-config_0.8.20-1_all.deb
+    echo "Atualizando repositório do sistema."
+    sudo apt update -y
     echo "Instalando o $programa"
     sudo apt install mysql-server -y
+    echo "Iniciando a configuração de senha do $programa"
+    echo "Coloque N não primeir pergunta"
+    sudo mysql_secure_installation   
     echo "Status do $programa"
     sudo /etc/init.d/mysql status
     echo "Iniciando o $programa"
-    sudo /etc/init.d/mysql start
-    echo "Iniciando a configuração de senha do $programa"
-    echo "Coloque N não primeir pergunta"
-    sudo mysql_secure_installation
-    
+    sudo systemctl start mysql
+    echo "Habilitando a iniciação automática do $programa"
+    sudo systemctl enable mysql
+    echo "$programa instalado com sucesso."     
 fi
