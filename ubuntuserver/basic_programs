@@ -1,0 +1,15 @@
+#!/bin/bash
+echo "Instalando Unrar"
+sudp apt install unrar -y
+echo "Instalando pacote de rede"
+sudo apt install net-tools -y
+echo "Instalando o editor nano"
+sudo apt install nano -y
+echo "Instalando o editor vim"
+sudo apt install vim -y
+echo "Instalando o nodejs"
+sudo apt install nodejs -y
+echo "Instalando o npm"
+sudo apt install npm -y
+echo "Corrigindo possíveis defeito de instalação e/ou atualização"
+sudo apt install -f -y

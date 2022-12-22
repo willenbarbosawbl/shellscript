@@ -1,0 +1,11 @@
+#!/bin/bash
+echo "Atualizando lista de pacotes"
+sudo apt update -y
+echo "Atualizando pacotes"
+sudo apt upgrade -y
+echo "Atualizando distribuição"
+sudo apt dist-upgrade -y
+echo "Corrigindo possíveis defeito de instalação e/ou atualização"
+sudo apt install -f -y
+echo "Removendo pacotes não utilizados"
+sudo autoremove -y
