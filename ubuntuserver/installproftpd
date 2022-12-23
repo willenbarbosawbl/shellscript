@@ -1,0 +1,9 @@
+#!/bin/bash
+echo "Instalando servidor ftp"
+sudo apt install proftpd -y
+echo "Criando backup da configuração"
+cp /etc/proftpd/proftpd.conf /etc/proftpd/proftpd.conf.bkp
+sudo sed -i 's/# DefaultRoot~/DefaultRoot ~/g' /etc/proftpd/proftpd.conf
+echo "Reiniciando servidor FTP"
+systemctl restart proftpd
+systemctl status proftpd

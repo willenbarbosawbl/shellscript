@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "Instalando servidor Web"
+echo "Instalando o Apache2"
+sudo installapache2
+echo "Instalando o PHP8.2"
+sudo installphp82
+echo "Instalando o MariaBD"
+sudo installmariadb
+echo "Instalando PHPMyAdmin"
+sudo installphpmyadmin
+echo "Instalando o ProFTPD"
+sudo installproftpd

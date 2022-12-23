@@ -1,0 +1,86 @@
+#!/bin/bash
+
+caminho=$PWD
+pastahome=$(echo ${caminho} | tr "/" " " | awk '{print $1}')
+nomedeusuario=$(echo ${caminho} | tr "/" " " | awk '{print $2}')
+
+echo "Instalando o servidor Apache2"
+sudo apt install -y apache2
+echo "Habilitando modo rewrite e ssl"
+sudo a2enmod rewrite ssl
+echo "Reiniciando o servidor apache2"
+sudo systemctl restart apache2
+echo "Obtendo o Ststus do servidor"
+sudo systemctl status apache2
+echo "criando cópia do arquivo de configuração do apache2"
+cp /etc/apache2/apache2.conf /etc/apache2/apache2.conf.bkp
+echo "Alterando diretivas do Apache2"
+sudo sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+echo "criando certificado do apache2"
+sudo openssl req -x509 -nodes -days 300 -newkey rsa:2048 -keyout /etc/ssl/private/apache_ssl.key -out /etc/ssl/certs/apache_ssl.crt
+echo "Apache instalado com sucesso"
+sleep 5
+echo "Criando diretórios public_html e logs do usuário"
+sudo mkdir /home/$nomedeusuario/public_html
+sudo mkdir /home/$nomedeusuario/logs
+echo "Consedendo permissões das pastas do usuário"
+sudo chmod 755 -R /home/$nomedeusuario/public_html
+sudo chmod 755 -R /home/$nomedeusuario/logs
+sudo chown $nomedeusuario:www-data /home/$nomedeusuario/public_html
+sudo find /home/$nomedeusuario/public_html/ -type d -exec chmod -R 775 {} \;
+sudo find /home/$nomedeusuario/public_html/ -type f -exec chmod -R 664 {} \;
+sudo usermod -a -G www-data $nomedeusuario
+sudo id $nomedeusuario
+sudo groups $nomedeusuario
+echo "Criando configuração do usuário no apache"
+echo "<Directory /home/$nomedeusuario/public_html/>" >> /etc/apache2/apache2.conf
+echo "Options Indexes FollowSymLinks" >> /etc/apache2/apache2.conf
+echo "AllowOverride All" >> /etc/apache2/apache2.conf
+echo "Require all granted" >> /etc/apache2/apache2.conf
+echo "</Directory>" >> /etc/apache2/apache2.conf
+
+echo "Alterando arquivo padrão de site do apache2"
+sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/000-default.conf.bkp
+sudo rm -rf /etc/apache2/sites-available/000-default.conf
+echo "<VirtualHost *:80>" >> /etc/apache2/sites-available/000-default.conf
+echo "ServerName 192.168.137.2" >> /etc/apache2/sites-available/000-default.conf
+echo "#ServerAlias server.srv.br" >> /etc/apache2/sites-available/000-default.conf
+echo "ServerAdmin webmaster@192.168.137.2" >> /etc/apache2/sites-available/000-default.conf
+echo "DocumentRoot /home/$nomedeusuario/public_html" >> /etc/apache2/sites-available/000-default.conf
+echo "ErrorLog /home/$nomedeusuario/logs/error.log" >> /etc/apache2/sites-available/000-default.conf
+echo "CustomLog /home/$nomedeusuario/logs/access.log combined" >> /etc/apache2/sites-available/000-default.conf
+echo "</VirtualHost>" >> /etc/apache2/sites-available/000-default.conf
+
+echo "Alterando arquivo padrão ssl do site do apache2"
+sudo cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf.bkp
+
+sudo rm -rf /etc/apache2/sites-available/default-ssl.conf
+
+echo "<IfModule mod_ssl.c>" >> /etc/apache2/sites-available/default-ssl.conf
+echo "<VirtualHost _default_:443>" >> /etc/apache2/sites-available/default-ssl.conf
+echo "ServerName 192.168.137.2" >> /etc/apache2/sites-available/default-ssl.conf
+echo "#ServerAlias server.srv.br" >> /etc/apache2/sites-available/default-ssl.conf
+echo "ServerAdmin webmaster@192.168.137.2" >> /etc/apache2/sites-available/default-ssl.conf
+echo "DocumentRoot /home/$nomedeusuario/public_html" >> /etc/apache2/sites-available/default-ssl.conf
+echo "ErrorLog /home/$nomedeusuario/logs/ssl-error.log" >> /etc/apache2/sites-available/default-ssl.conf
+echo "CustomLog /home/$nomedeusuario/logs/ssl-access.log combined" >> /etc/apache2/sites-available/default-ssl.conf
+echo "SSLEngine on" >> /etc/apache2/sites-available/default-ssl.conf
+echo "SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem" >> /etc/apache2/sites-available/default-ssl.conf
+echo "SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key" >> /etc/apache2/sites-available/default-ssl.conf
+echo "<FilesMatch \"\.(cgi|shtml|phtml|php)$\">" >> /etc/apache2/sites-available/default-ssl.conf
+echo "SSLOptions +StdEnvVars" >> /etc/apache2/sites-available/default-ssl.conf
+echo "</FilesMatch>" >> /etc/apache2/sites-available/default-ssl.conf
+echo "<Directory /usr/lib/cgi-bin>" >> /etc/apache2/sites-available/default-ssl.conf
+echo "SSLOptions +StdEnvVars">> /etc/apache2/sites-available/default-ssl.conf
+echo "</Directory>" >> /etc/apache2/sites-available/default-ssl.conf
+echo "</VirtualHost>" >> /etc/apache2/sites-available/default-ssl.conf
+echo "</IfModule>" >> /etc/apache2/sites-available/default-ssl.conf
+sudo a2ensite  /etc/apache2/sites-available/default-ssl.conf
+
+echo "Complementando permissões do usuário"
+chown -vR $nomedeusuario:www-data /home/$nomedeusuario/
+
+echo "Reiniciando o Apache2"
+systemctl reload apache2
+systemctl restart apache2
+systemctl status apache2

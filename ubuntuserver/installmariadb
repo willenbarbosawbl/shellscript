@@ -1,0 +1,7 @@
+#!/bin/bash
+echo "Instalando o mariadb-server"
+sudo apt install mariadb-server -y
+echo "Configurando o MariaDB"
+mysql_secure_installation
+echo "Versão do Maria DB"
+sudo mysql --version
