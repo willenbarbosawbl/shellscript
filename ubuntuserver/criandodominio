@@ -31,4 +31,6 @@ function createDir{
 
 $user="webserver"
 $dir="public_html"
+echo $user
+echo $dir
 createDir $user $dir
