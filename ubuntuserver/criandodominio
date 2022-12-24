@@ -1,6 +1,6 @@
 #!/bin/bash
 
-function createDir{
+function createDir(){
     $user=$1
     $dir="/home/$user/$2"    
     echo "Verificando se pasta existe."
