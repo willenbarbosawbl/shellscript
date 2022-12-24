@@ -6,7 +6,7 @@ function createDir(){
     echo "Verificando se pasta existe."
     if [! -d "$dir" ];
     then
-        echo "Pasta ($dir) na existe."
+        echo "Pasta $dir na existe."
         echo "Criando pasta...aguarde..."
         echo $user
         echo $dir
@@ -18,7 +18,7 @@ function createDir(){
         #sleep 6
         echo "Pasta Criando com sucesso"
     else
-        echo "Atualizando ($dir) permissões da pasta"
+        echo "Atualizando $dir permissões da pasta"
         #sudo chmod 755 -R $dir
         #sudo chown $user:www-data $dir
         #sudo find $dir/ -type d -exec chmod -R 775 {} \;
