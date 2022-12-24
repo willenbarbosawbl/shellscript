@@ -83,4 +83,4 @@ chown -vR $nomedeusuario:www-data /home/$nomedeusuario/
 echo "Reiniciando o Apache2"
 systemctl reload apache2
 systemctl restart apache2
-systemctl status apache2
+

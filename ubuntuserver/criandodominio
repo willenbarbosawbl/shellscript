@@ -1,0 +1,35 @@
+#!/bin/bash
+
+function createDir(){
+    $user=$1
+    $dir="/home/$user/$2"    
+    echo "Verificando se pasta existe."
+    if [! -d "$dir" ];
+    then
+        echo "Pasta ($dir) na existe."
+        echo "Criando pasta...aguarde..."
+        echo $user
+        echo $dir
+        #sudo mkdir $dir
+        #sudo chmod 755 -R /$dir
+        #sudo chown $user:www-data $dir
+        #sudo find $dir/ -type d -exec chmod -R 775 {} \;
+        #sudo find $dir/ -type f -exec chmod -R 744 {} \;
+        #sleep 6
+        echo "Pasta Criando com sucesso"
+    else
+        echo "Atualizando ($dir) permissões da pasta"
+        #sudo chmod 755 -R $dir
+        #sudo chown $user:www-data $dir
+        #sudo find $dir/ -type d -exec chmod -R 775 {} \;
+        #sudo find $dir/ -type f -exec chmod -R 744 {} \;
+        #sleep 6
+        echo "Permissões consedidas com sucesso."    
+    fi
+}
+
+
+$user="webserver"
+$dir="public_html"
+
+echo createDir $user $dir
