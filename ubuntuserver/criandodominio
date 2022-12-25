@@ -1,36 +1,116 @@
 #!/bin/bash
 
-function createDir(){
-    $user=$1
-    $dir="/home/$user/$2"    
-    echo "Verificando se pasta existe."
-    if [! -d "$dir" ];
+echo "Criando novo domínio"
+echo "Qual o nome do usuário? "
+read usuario
+echo "Qual o nome do domínio? "
+read dominio
+echo "Verificando se usuário já existe..."
+verificauser=$(grep -w ^$user /etc/passwd | cut -d: -f 1)
+if [-z $verificauser ];
+then
+    echo "O usuário ($usuario) não existe!"
+    vu="n"
+else
+    vu="s"
+fi
+
+dir_public=/home/$usuario/public_html
+dir_logs=/home/$usuario/logs
+
+if [ $vu="s" ];
+then
+    echo "Verifiando se pastas já existem"
+    if [ ! -d "$dir_public" ];
     then
-        echo "Pasta $dir na existe."
-        echo "Criando pasta...aguarde..."
-        echo $user
-        echo $dir
-        #sudo mkdir $dir
-        #sudo chmod 755 -R /$dir
-        #sudo chown $user:www-data $dir
-        #sudo find $dir/ -type d -exec chmod -R 775 {} \;
-        #sudo find $dir/ -type f -exec chmod -R 744 {} \;
-        #sleep 6
-        echo "Pasta Criando com sucesso"
+        echo "A pasta não existe."
+        sudo mkdir $dir_public
+        sudo mkdir $dir_logs
+        sudo chmod 755 -R $dir_public
+        sudo chmod 755 -R $dir_logs
+        sudo chown $usuario:www-data $dir_public
+        sudo chown $usuario:www-data $dir_logs
+        sudo find $dir_public -type d -exec chmod -R 775 {} \;
+        sudo find $dir_logs -type f -exec chmod -R 664 {} \;
+        echo "Pasta Criada"
     else
-        echo "Atualizando $dir permissões da pasta"
-        #sudo chmod 755 -R $dir
-        #sudo chown $user:www-data $dir
-        #sudo find $dir/ -type d -exec chmod -R 775 {} \;
-        #sudo find $dir/ -type f -exec chmod -R 744 {} \;
-        #sleep 6
-        echo "Permissões consedidas com sucesso."    
+        sudo chmod 755 -R $dir_public
+        sudo chmod 755 -R $dir_logs
+        sudo chown $usuario:www-data $dir_public
+        sudo chown $usuario:www-data $dir_logs
+        sudo find $dir_public -type d -exec chmod -R 775 {} \;
+        sudo find $dir_logs -type f -exec chmod -R 664 {} \;
     fi
-}
+else
+    echo "Usuário ($usuario) não existe"
+    echo "Criando usuário"
+    echo "Informe a senha do usuário: "
+    read senha
+    useradd -m -d /home/$usuario -p $(openssl passwd -1 $senha) -s /bin/bash $usuario
+    echo "Criando pastas public_html e logs"
+    sudo mkdir $dir_public
+    sudo mkdir $dir_logs
+    sudo chmod 755 -R $dir_public
+    sudo chmod 755 -R $dir_logs
+    sudo chown $usuario:www-data $dir_public
+    sudo chown $usuario:www-data $dir_logs
+    sudo find $dir_public -type d -exec chmod -R 775 {} \;
+    sudo find $dir_logs -type f -exec chmod -R 664 {} \;
+    sudo usermod -a -G www-data $nomedeusuario
+    sudo id $nomedeusuario
+    sudo groups $nomedeusuario
+    echo "Usuário ($usuario) e Pastas ($dir_public e $dir_logs) criadas."
+fi
 
+echo "Criando configurações do apache2"
+echo "<Directory /home/$usuario/public_html/>" >> /etc/apache2/apache2.conf
+echo "Options Indexes FollowSymLinks" >> /etc/apache2/apache2.conf
+echo "AllowOverride All" >> /etc/apache2/apache2.conf
+echo "Require all granted" >> /etc/apache2/apache2.conf
+echo "</Directory>" >> /etc/apache2/apache2.conf
 
-$user="webserver"
-$dir="public_html"
-echo $user
-echo $dir
-createDir $user $dir
+echo "Criando site no apache"
+echo "<VirtualHost $dominio:80>" >> /etc/apache2/sites-available/$dominio.conf
+echo "ServerName $dominio" >> /etc/apache2/sites-available/$dominio.conf
+echo "ServerAlias www.$dominio" >> /etc/apache2/sites-available/$dominio.conf
+echo "ServerAdmin webmaster@$dominio" >> /etc/apache2/sites-available/$dominio.conf
+echo "DocumentRoot /home/$usuario/public_html" >> /etc/apache2/sites-available/$dominio.conf
+echo "ErrorLog /home/$usuario/logs/error.log" >> /etc/apache2/sites-available/$dominio.conf
+echo "CustomLog /home/$usuario/logs/access.log combined" >> /etc/apache2/sites-available/$dominio.conf
+echo "</VirtualHost>" >> /etc/apache2/sites-available/$dominio.conf
+
+echo "Criando o ssl do domínio"
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/$dominio.key -out /etc/ssl/certs/$dominio.crt
+
+echo "Criando site ssl no apache"
+echo "<IfModule mod_ssl.c>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "<VirtualHost $dominio:443>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "ServerName $dominio" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "ServerAlias www.$dominio" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "ServerAdmin webmaster@$dominio" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "DocumentRoot /home/$usuario/public_html" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "ErrorLog /home/$usuario/logs/ssl-error.log" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "CustomLog /home/$usuario/logs/ssl-access.log combined" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "SSLEngine on" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "SSLCertificateFile      /etc/ssl/certs/$dominio.crt" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "SSLCertificateKeyFile /etc/ssl/private/$dominio.key" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "<FilesMatch \"\.(cgi|shtml|phtml|php)$\">" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "SSLOptions +StdEnvVars" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "</FilesMatch>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "<Directory /usr/lib/cgi-bin>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "SSLOptions +StdEnvVars">> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "</Directory>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "</VirtualHost>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "</IfModule>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+
+echo "Habilitando sites"
+sudo a2ensite /etc/apache2/sites-available/$dominio.conf
+sudo a2ensite /etc/apache2/sites-available/$dominio-ssl.conf
+
+echo "Complementando permissões do usuário"
+chown -vR $nomedeusuario:www-data /home/$nomedeusuario/
+
+echo "Reiniciando o Apache2"
+systemctl reload apache2
+systemctl restart apache2
+systemctl status apache2
