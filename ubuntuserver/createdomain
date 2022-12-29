@@ -1,54 +1,16 @@
 #!/bin/bash
-
 echo "Criando novo domínio"
 echo "Qual o nome do usuário? "
 read usuario
 echo "Qual o nome do domínio? "
 read dominio
-echo "Verificando se usuário já existe..."
-verificauser=$(grep -w ^$user /etc/passwd | cut -d: -f 1)
-if [ -z $verificauser ];
-then
-    echo "O usuário ($usuario) não existe!"
-    vu="n"
-else
-    vu="s"
-fi
 
 dir_public=/home/$usuario/public_html
 dir_logs=/home/$usuario/logs
 
-if [ $vu="s" ];
+if [ ! -d "$dir_public" ];
 then
-    echo "Verifiando se pastas já existem"
-    if [ ! -d "$dir_public" ];
-    then
-        echo "A pasta não existe."
-        sudo mkdir $dir_public
-        sudo mkdir $dir_logs
-        sudo chmod 755 -R $dir_public
-        sudo chmod 755 -R $dir_logs
-        sudo chown $usuario:www-data $dir_public
-        sudo chown $usuario:www-data $dir_logs
-        sudo find $dir_public -type d -exec chmod -R 775 {} \;
-        sudo find $dir_logs -type f -exec chmod -R 664 {} \;
-        echo "Pasta Criada"
-    else
-        sudo chmod 755 -R $dir_public
-        sudo chmod 755 -R $dir_logs
-        sudo chown $usuario:www-data $dir_public
-        sudo chown $usuario:www-data $dir_logs
-        sudo find $dir_public -type d -exec chmod -R 775 {} \;
-        sudo find $dir_logs -type f -exec chmod -R 664 {} \;
-    fi
-else
-    echo "Usuário ($usuario) não existe"
-    echo "Criando usuário"
-    #echo "Informe a senha do usuário: "
-    #read senha
-    #useradd -m -d /home/"$usuario" -p $(openssl passwd -1 "$senha") -s /bin/bash "$usuario"
-    user add $usuario
-    echo "Criando pastas public_html e logs"
+    echo "A pasta não existe."
     sudo mkdir $dir_public
     sudo mkdir $dir_logs
     sudo chmod 755 -R $dir_public
@@ -57,10 +19,14 @@ else
     sudo chown $usuario:www-data $dir_logs
     sudo find $dir_public -type d -exec chmod -R 775 {} \;
     sudo find $dir_logs -type f -exec chmod -R 664 {} \;
-    sudo usermod -a -G www-data $nomedeusuario
-    sudo id $nomedeusuario
-    sudo groups $nomedeusuario
-    echo "Usuário ($usuario) e Pastas ($dir_public e $dir_logs) criadas."
+    echo "Pasta Criada"
+else
+    sudo chmod 755 -R $dir_public
+    sudo chmod 755 -R $dir_logs
+    sudo chown $usuario:www-data $dir_public
+    sudo chown $usuario:www-data $dir_logs
+    sudo find $dir_public -type d -exec chmod -R 775 {} \;
+    sudo find $dir_logs -type f -exec chmod -R 664 {} \;
 fi
 
 echo "Criando configurações do apache2"
