@@ -37,7 +37,7 @@ echo "Require all granted" >> /etc/apache2/apache2.conf
 echo "</Directory>" >> /etc/apache2/apache2.conf
 
 echo "Criando site no apache"
-echo "<VirtualHost $dominio:80>" >> /etc/apache2/sites-available/$dominio.conf
+echo "<VirtualHost *:80>" >> /etc/apache2/sites-available/$dominio.conf
 echo "ServerName $dominio" >> /etc/apache2/sites-available/$dominio.conf
 echo "ServerAlias www.$dominio" >> /etc/apache2/sites-available/$dominio.conf
 echo "ServerAdmin webmaster@$dominio" >> /etc/apache2/sites-available/$dominio.conf
@@ -51,7 +51,7 @@ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/privat
 
 echo "Criando site ssl no apache"
 echo "<IfModule mod_ssl.c>" >> /etc/apache2/sites-available/$dominio-ssl.conf
-echo "<VirtualHost $dominio:443>" >> /etc/apache2/sites-available/$dominio-ssl.conf
+echo "<VirtualHost *:443>" >> /etc/apache2/sites-available/$dominio-ssl.conf
 echo "ServerName $dominio" >> /etc/apache2/sites-available/$dominio-ssl.conf
 echo "ServerAlias www.$dominio" >> /etc/apache2/sites-available/$dominio-ssl.conf
 echo "ServerAdmin webmaster@$dominio" >> /etc/apache2/sites-available/$dominio-ssl.conf
@@ -76,6 +76,10 @@ sudo a2ensite /etc/apache2/sites-available/$dominio-ssl.conf
 
 echo "Complementando permissões do usuário"
 chown -vR $nomedeusuario:www-data /home/$nomedeusuario/
+
+echo "Adiciona do domínio ao host"
+echo "127.0.0.1 $dominio" >> /etc/hosts
+echo "127.0.1.1 www.$dominio" >> /etc/hosts
 
 echo "Reiniciando o Apache2"
 systemctl reload apache2
